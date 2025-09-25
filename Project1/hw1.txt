@@ -1,0 +1,42 @@
+Description says that everything is in the makefile, but I can't find the makefile. Nvm I think the files are https://seedsecuritylabs.org/Labs_20.04/Files/Return_to_Libc/Labsetup.zip
+
+
+
+Task 1:
+
+My laptop is a Macbook with an M3 chip so in order to complete this assignment I requested a VM from the CS Systems Group.  Once I had the VM I ran 'wget ' to get the lab files needed.
+
+Task 2:
+
+To get ready for the lab I ran
+sudo sysctl -w kernel.randomize_va_space=0  # this turns off address space randomization for making our payload easier to craft.
+sudo ln -sf /bin/zsh /bin/sh # this turns off the dash shell feature that would otherwise drop the SET-UID privilege if we tried to run our program.
+
+I also changed N to 48 in the Makefile.
+
+Task 3:
+By creating a shell variable with the string "/bin/sh" (maybe we should do "/bin//sh") we are able to pass the address of that variable into system() to spawn a shell.  Not sure if we put this code into the given C program or create our own file named prtenv.c.  
+We make the environment variable by exporting it in our terminal.
+By doing this we are able to consistently know the address of our parameter we need to pass to system() in order to get the shell.
+The payload format would be [overflow the buffer] [address of function we want to call] [return address for that function] [address of parameter for the function]
+
+The stack layout will be [buffer][saved EBP][address of function we want to call - this will be system()][return address for the function - this will be exit()][parameters of function we call]
+The value of X will contain the parameter of our function we call so it will need to be in the 4th stack frame after the buffer.  We know that each frame is 32 bits except the buffer which is 48 bytes.  So X will have to be give or take 48 bytes + 12 bytes. 
+
+The value of Y is the function we are calling so it should be close to 48 + 4.
+
+The value of Z is the return address so it will be the 3rd stack frame which is 48 bytes + 8 bytes.
+
+To find the addresses of system(), exit(), and /bin/sh we ...
+
+
+
+
+
+Attack variation 1: I don't believe the exit function is necessary since it is only called after the system() call is done.  By the time that system() is done and exit() is called we will have already created our shell and got the information we need. 
+
+Attack variation 2:
+
+
+3.4
+
