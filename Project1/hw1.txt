@@ -15,9 +15,10 @@ sudo ln -sf /bin/zsh /bin/sh # this turns off the dash shell feature that would 
 I also changed N to 48 in the Makefile.
 
 Task 3:
-By creating a shell variable with the string "/bin/sh" (maybe we should do "/bin//sh") we are able to pass the address of that variable into system() to spawn a shell.  Not sure if we put this code into the given C program or create our own file named prtenv.c.  
+By creating a shell variable with the string "/bin/sh" (maybe we should do "/bin//sh") we are able to pass the address of that variable into system() to spawn a shell.  
 We make the environment variable by exporting it in our terminal.
-By doing this we are able to consistently know the address of our parameter we need to pass to system() in order to get the shell.
+We then got the address of this environment variable by creating the prtenv program as in the instructions.
+By doing this we are able to consistently know the address of our parameter we need to pass to system() in order to get the shell.  The address of my variable was ffffd440
 The payload format would be [overflow the buffer] [address of function we want to call] [return address for that function] [address of parameter for the function]
 
 The stack layout will be [buffer][saved EBP][address of function we want to call - this will be system()][return address for the function - this will be exit()][parameters of function we call]
@@ -27,16 +28,16 @@ The value of Y is the function we are calling so it should be close to 48 + 4.
 
 The value of Z is the return address so it will be the 3rd stack frame which is 48 bytes + 8 bytes.
 
-To find the addresses of system(), exit(), and /bin/sh we ...
+To find the addresses of system() and exit() we set a breakpoint in main() of retlib so the program would initialize the libc functions then we printed out system and exit in gdb to get the addresses.
 
-
-
-
+The values of 60, 52, and 56 for X, Y, and Z, respectively, did not work so I need to change them.  Given the information about the buffer location and frame pointer I can subtract the decimal values to see that there are 60 bytes between them meaning I need to start the return address after 60 bytes + the EBP pointer which is 4 bytes.  So I changed the values with the system() address starting at 64 and so on, but then the output said that "in/sh" did not exist.  I don't know why this happened, but I know I needed 2 more bytes for the "/b" so instead of ffffd440 for the environment variable I did ffffd43e.  I do not know why this works (but I find out in attack variation 2).
 
 Attack variation 1: I don't believe the exit function is necessary since it is only called after the system() call is done.  By the time that system() is done and exit() is called we will have already created our shell and got the information we need. 
+I just changed exit() to 0x11111111 and the exploit worked as expected, and caused a segmentation fault after closing the spawned shell.  Similarly, if you delete the part related to exit() in the exploit.py entirely then the exploit also works the same.
+
 
 Attack variation 2:
-
+The attack will not work because .  I now realize that this is why my initial MYSHELL address was off because I was compiling prtenv.c such that the output binary was a.out which shifted the bytes.  This is due to how programs are loaded into memory using "argv[]". 
 
 3.4
-
+In order to complete this task we'll need to find the address of execv by setting a breakpoint and printing it out then we'll need to craft our parameter payload according to execv's arguments rather than system's.  We will input NULL as the last argument by .
