@@ -3,7 +3,7 @@
 #include <string.h>
 
 #ifndef BUF_SIZE
-#define BUF_SIZE 12
+#define BUF_SIZE 48 
 #endif
 
 int bof(char *str)
