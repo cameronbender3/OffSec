@@ -1,0 +1,41 @@
+I will be completing this assignment using a vm provided by the CS labs.  I ran curl on the provided url in order to get the lab contents needed. I I also discovered that if I ssh onto linprog then ssh onto shell (it didn't let me ssh directly from my machine to shell) then I am able to ssh onto the proxmox vm. <Pic 1 here>
+Here I ran a few commands to make sure my virtual environment did not have certain countermeasures on.
+These commands included "sudo sysctl -w kernel.randomize_va_space=0" and "sudo ln -sf /bin/zsh /bin/sh" <Pic 2 here>
+
+Task 1:
+Here we learned about how we can make and use shellcode in C for different situations.  After compiling the shellcode with both the 32 bit and 64 bit versions I ran the binaries and got the same results <Pic 3 Here>.
+
+Task 2:
+Here I configured the makefile to have L1 = 124, L2 = 180, L3 = 168, and L4 = 10 <Pic of Makefile here>
+
+Task 3:
+Here we are trying to find the offset of the buffer and return address so we are using gdb to help us narrow it down.  We set a breakpoint in bof and run "next" to make sure that the ebp pointer has been updated correctly then we subtract the decimal value of the addresses ebp and buffer to get the offset.  We got 132.  <Pic 4 here>
+However, this just gives us the offset between ebp and our buffer, but we need to overwrite the return address which is 4 bytes after ebp and offset 136.  Once we overwrite offset 136-140 with the address of our shellcode then our shellcode should execute.  First I tried making start = 0, but there was an error with null bytes being input after my shellcode which would mess up the payload contents, but I am still not sure of the exact reason it was not working.  Eventually I made start = 450, and since we know the address of buffer we know the shellcode will be 450 bytes after that address. <Pic 5 here>.
+
+Task 4:
+In order to complete this task we will need to ensure that we have NOP surrounding my shellcode so that even if we do not know exactly how big the buffer size is, it'll still work.  We still know that there will be about 8 bytes in between the last byte of the buffer and the return address so if the buffer is between 100-200 bytes then we need to fill bytes 100-200 (plus 8 for EBP and other) with the return address to the shellcode.  Since each frame pointer is 4 bytes and our return address is 4 bytes, this ensures it will always be the correct return address.  <Pic 6 here>.
+
+Task 5:
+We will get the addresses we need similarly to the 32-bit binaries in gdb, but instead we need to get rbp instead of ebp.
+In order to complete this task we need to use the shellcode for x86_64 rather than x86_32 as we previously were.
+I think that in order to overcome the null bytes in the address issue is to place the address we want to return to outside of strcpy.
+The way I got the addresses for this payload was identical to task 3 except we need to add 8 to our return offset instead of 4 since each address in 64 bit is 8 bytes. We put the shellcode in the beginning of the payload since the shellcode bytes won't affect strcpy() and we put the address to the shellcode in the return address (which is last in the payload) so that it does not matter if strcpy() stops after it.  <Pic 7 here>
+
+Task 6:
+Only required for graduate students.
+
+Task 7:
+After relinking /bin/sh to point back to /bin/dash I ran the 2 binaries generated.  The first time running "make setuid" I did not add the setuid code to the program, and the second time I did add it.  When you execute the binaries the first time and you run "whoami" it will tell you you are seed.  The prompt will also have a "$".  When you include the setuid code then the prompt will have a "#" and the output of "whoami" is root. <Pic 8 here>
+Now, to repeat our attack on level 1 we will just need to add the setuid code to our shellcode.  I did not have to change any of my offsets from my previous level 1 payload.  <Pic 9 here>.
+
+Task 8:
+After turning stack layout randomization on and running my same program from task 7 I now get a seg fault.  With the script provided we should be able to, after a few minutes, get the correct addresses since there are only so many combos on 32-bit systems.  <Pic 10 here>
+
+Task 9a:
+After making the right changes if you try to run with the same payload then you will get '*** stack smashing detected ***: terminated Aborted'.  To defeat the canary we will need to go into gdb to see the contents of the canary and put it into our payload in the 4 bytes directly after our buffer since that is where it is located.
+<Pic 12 here>
+
+
+9b:
+When making the stack non-executable and running the corresponding binaries we get a segmentation fault for both output.
+<Pic 11 here>
